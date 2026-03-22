@@ -20,5 +20,3 @@ int main(void) {
   log_success("Passed: All Tests.");
   return 0;
 }
-
-#include <stdio.h>
