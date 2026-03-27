@@ -2,9 +2,12 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stdbool.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+// String
 
 /**
  * @brief Convert string literal to String
@@ -108,3 +111,77 @@ void string_trim(String *s) {
   string_trim_left(s);
   string_trim_right(s);
 }
+
+size_t string_find(String s, String delim) {
+  for (size_t i = 0; i < s.length; ++i) {
+    if (s.first_char[i] == delim.first_char[0]) {
+      for (size_t j = i; j < delim.length; ++j) {
+        if (s.first_char[j] != delim.first_char[j]) {
+          break;
+        }
+      }
+      return i;
+    }
+  }
+  return 0;
+}
+
+// Array
+
+static size_t type_size(T type) {
+  switch (type) {
+  case INT_T:
+    return sizeof(int);
+  case INT8_T:
+    return sizeof(int8_t);
+  case INT16_T:
+    return sizeof(int16_t);
+  case INT32_T:
+    return sizeof(int32_t);
+  case UINT64_T:
+    return sizeof(uint64_t);
+  case CHAR_T:
+    return sizeof(char);
+  default:
+    return 0;
+  }
+}
+
+Array array_new(const void *src_arr, size_t length, T type) {
+  Array arr = {
+      .size = length * type_size(type),
+      .length = length,
+      .data = calloc(arr.length, arr.size),
+  };
+  if (!src_arr) {
+    memcpy(arr.data, src_arr, arr.size);
+  }
+  return arr;
+}
+
+void array_free(Array *arr) {
+  free(arr->data);
+  arr->length = 0;
+  arr->size = 0;
+}
+
+// WARN: Array push doesn't work
+// void array_push(Array *arr, const void *item, size_t index) {
+//   size_t item_size = arr->size / arr->length;
+//   if (index > arr->length)
+//     index = arr->length;
+//   size_t new_length = arr->length + 1;
+//   size_t new_bytes = new_length * item_size;
+//   void *new_data = realloc(arr->data, new_bytes);
+//   arr->data = new_data;
+//   size_t tail_count = arr->length - index;
+//   if (tail_count > 0) {
+//     void *base = (char *)arr->data;
+//     void *src = base + index * item_size;
+//     void *dst = base + (index + 1) * item_size;
+//     memmove(dst, src, tail_count * item_size);
+//   }
+//   void *target = (char *)arr->data + index * item_size;
+//   memcpy(target, item, item_size);
+//   arr->length = new_length;
+// }
