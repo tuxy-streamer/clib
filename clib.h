@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-//String
+// String
 
 typedef struct {
   char *first_char;
@@ -25,26 +25,18 @@ void string_trim(String *s);
 size_t string_find(String s, String delim);
 void string_split_delim(String s, String delim, int nsplit);
 
-//Array
-
-typedef enum{
-	INT_T,
-	INT8_T,
-	INT16_T,
-	INT32_T,
-	UINT64_T,
-	CHAR_T,
-}T;
+// Array
 
 typedef struct {
-	size_t size;
-	size_t length;
-	void *data;
-}Array;
+  size_t length;
+  size_t size;
+  void **data;
+} Array;
 
-Array array_new(const void *src_arr, size_t length, T type);
+Array array_new(size_t length);
+Array array_conversion(void *input, size_t length, size_t elem_size);
 void array_free(Array *arr);
 void array_push(Array *arr, const void *item, size_t index);
 void array_pop(Array *arr, const void *item, size_t index);
 
-#endif //CLIB_H
+#endif // CLIB_H

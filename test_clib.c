@@ -27,10 +27,8 @@ static void test_string_find(void) {
 
 static void test_array_new(void) {
   int input[3] = {1, 2, 3};
-  const void *src_arr = input;
-  Array arr = array_new(src_arr, 2, INT_T);
-  int *original = (int *)src_arr;
-  int *copy = (int *)arr.data;
+  Array arr = array_conversion(&input, sizeof(input) / sizeof(input[0]),
+                               sizeof(input[0]));
   for (size_t i = 0; i < arr.length; ++i) {
     assert(copy[i] == original[i]);
   }

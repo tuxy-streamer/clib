@@ -128,30 +128,11 @@ size_t string_find(String s, String delim) {
 
 // Array
 
-static size_t type_size(T type) {
-  switch (type) {
-  case INT_T:
-    return sizeof(int);
-  case INT8_T:
-    return sizeof(int8_t);
-  case INT16_T:
-    return sizeof(int16_t);
-  case INT32_T:
-    return sizeof(int32_t);
-  case UINT64_T:
-    return sizeof(uint64_t);
-  case CHAR_T:
-    return sizeof(char);
-  default:
-    return 0;
-  }
-}
-
-Array array_new(const void *src_arr, size_t length, T type) {
+Array array_new(size_t length) {
   Array arr = {
-      .size = length * type_size(type),
       .length = length,
-      .data = calloc(arr.length, arr.size),
+      .size = sizeof(void *) * length,
+      .data = malloc(sizeof(void *) * length),
   };
   if (!src_arr) {
     memcpy(arr.data, src_arr, arr.size);
