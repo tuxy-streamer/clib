@@ -134,16 +134,41 @@ Array array_new(size_t length) {
       .size = sizeof(void *) * length,
       .data = malloc(sizeof(void *) * length),
   };
-  if (!src_arr) {
-    memcpy(arr.data, src_arr, arr.size);
-  }
+  if (!arr.data)
+    abort();
+  return arr;
+}
+
+Array array_conversion(void *input, size_t length, size_t elem_size) {
+  Array arr = array_new(length);
+  char *base = (char *)input;
+  for (size_t i = 0; i < length; ++i)
+    arr.data[i] = (void *)(base + i * elem_size);
   return arr;
 }
 
 void array_free(Array *arr) {
+  if (!arr)
+    return;
   free(arr->data);
   arr->length = 0;
   arr->size = 0;
+  arr->data = NULL;
+}
+
+Array array_concat(Array arr1, Array arr2) {
+  size_t len1 = arr1.length;
+  size_t len2 = arr2.length;
+  Array arr_concat = {
+      .length = len1 + len2,
+      .size = len1 + len2,
+      .data = calloc(len1 + len2, sizeof(void *)),
+  };
+  if (!arr_concat.data)
+    abort();
+  memcpy(arr_concat.data, arr1.data, len1 * sizeof(void *));
+  memcpy(arr_concat.data + len1, arr2.data, len2 * sizeof(void *));
+  return arr_concat;
 }
 
 // WARN: Array push doesn't work

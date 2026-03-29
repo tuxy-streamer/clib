@@ -36,6 +36,7 @@ typedef struct {
 Array array_new(size_t length);
 Array array_conversion(void *input, size_t length, size_t elem_size);
 void array_free(Array *arr);
+Array array_concat(Array arr1, Array arr2);
 void array_push(Array *arr, const void *item, size_t index);
 void array_pop(Array *arr, const void *item, size_t index);
 
