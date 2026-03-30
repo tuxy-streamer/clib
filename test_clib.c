@@ -74,6 +74,32 @@ static void test_array_concat(void) {
   log_success("Passed: test_array_concat");
 }
 
+static void test_array_split(void) {
+  int input[6] = {1, 2, 3, 4, 5, 6};
+  size_t len = sizeof input / sizeof input[0];
+  Array arr = array_conversion(&input, len, sizeof input[0]);
+  Array *arr_comb = array_split(arr, len - 1);
+  Array arr1 = arr_comb[0];
+  Array arr2 = arr_comb[1];
+  for (size_t i = 0; i < arr1.length; ++i) {
+    int *p_src = (int *)arr1.data[i];
+    int *p_dst = (int *)arr.data[i];
+    assert(p_src && p_dst);
+    assert(*p_src == *p_dst);
+  }
+  for (size_t i = 0; i < arr2.length; ++i) {
+    int *p_src = (int *)arr2.data[i];
+    int *p_dst = (int *)arr.data[arr1.length + i];
+    assert(p_src && p_dst);
+    assert(*p_src == *p_dst);
+  }
+  array_free(&arr1);
+  array_free(&arr2);
+  array_free(&arr);
+  free(arr_comb);
+  log_success("Passed: test_array_split");
+}
+
 // static void test_array_push(void) {
 //   int input[3] = {1, 2, 3};
 //   const void *src_arr = input;
@@ -96,6 +122,7 @@ int main(void) {
   test_string_find();
   test_array_new();
   test_array_concat();
+  test_array_split();
   // test_array_push();
   log_success("Passed: All Tests.");
   return 0;

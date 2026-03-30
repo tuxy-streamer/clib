@@ -3,12 +3,18 @@
 
 #include <stddef.h>
 
-// String
-
 typedef struct {
   char *first_char;
   size_t length;
 } String;
+
+typedef struct {
+  size_t length;
+  size_t size;
+  void **data;
+} Array;
+
+// String
 
 String string_new(char *first_char);
 
@@ -27,16 +33,11 @@ void string_split_delim(String s, String delim, int nsplit);
 
 // Array
 
-typedef struct {
-  size_t length;
-  size_t size;
-  void **data;
-} Array;
-
 Array array_new(size_t length);
 Array array_conversion(void *input, size_t length, size_t elem_size);
 void array_free(Array *arr);
 Array array_concat(Array arr1, Array arr2);
+Array *array_split(Array arr, size_t index);
 void array_push(Array *arr, const void *item, size_t index);
 void array_pop(Array *arr, const void *item, size_t index);
 

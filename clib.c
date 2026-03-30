@@ -171,6 +171,35 @@ Array array_concat(Array arr1, Array arr2) {
   return arr_concat;
 }
 
+Array *array_split(Array arr, size_t index) {
+  if (arr.length == 0) {
+    Array *ret = malloc(2 * sizeof *ret);
+    if (!ret)
+      abort();
+    ret[0] = array_new(0);
+    ret[1] = array_new(0);
+    return ret;
+  }
+  if (index >= arr.length)
+    index = arr.length - 1;
+  size_t left_count = index + 1;
+  size_t right_count = arr.length - left_count;
+  Array *ret_arr = malloc(2 * sizeof *ret_arr);
+  if (!ret_arr)
+    abort();
+  ret_arr[0] = array_new(left_count);
+  ret_arr[1] = array_new(right_count);
+  if (left_count > 0) {
+    memcpy(ret_arr[0].data, arr.data, left_count * sizeof(void *));
+  }
+  if (right_count > 0) {
+    memcpy((char *)ret_arr[1].data,
+           (char *)arr.data + left_count * sizeof(void *),
+           right_count * sizeof(void *));
+  }
+  return ret_arr;
+}
+
 // WARN: Array push doesn't work
 // void array_push(Array *arr, const void *item, size_t index) {
 //   size_t item_size = arr->size / arr->length;
