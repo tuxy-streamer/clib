@@ -161,13 +161,13 @@ Array array_concat(Array arr1, Array arr2) {
   size_t len2 = arr2.length;
   Array arr_concat = {
       .length = len1 + len2,
-      .size = len1 + len2,
+      .size = (len1 + len2) * sizeof(void *),
       .data = calloc(len1 + len2, sizeof(void *)),
   };
   if (!arr_concat.data)
     abort();
-  memcpy(arr_concat.data, arr1.data, len1 * sizeof(void *));
-  memcpy(arr_concat.data + len1, arr2.data, len2 * sizeof(void *));
+  memcpy(arr_concat.data, arr1.data, arr1.size);
+  memcpy(arr_concat.data + len1, arr2.data, arr2.size);
   return arr_concat;
 }
 
