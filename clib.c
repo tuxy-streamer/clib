@@ -1,11 +1,42 @@
 #include "./clib.h"
+#include <asm-generic/errno-base.h>
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+// Error checks
+
+static int err_check(bool condition, const char fn_name[], const char *msg,
+                     int err) {
+  if (!condition)
+    return 0;
+  fprintf(stderr, "%s: errno = %d - %s\n", fn_name, err, msg);
+  errno = err;
+  return 1;
+}
+
+static int mem_err_check(void *mem_ptr, const char fn_name[], const char *msg) {
+  return err_check(mem_ptr == NULL, fn_name, msg, ENOMEM);
+}
+
+static int input_err_check(bool condition, const char fn_name[],
+                           const char *msg) {
+  return err_check(condition, fn_name, msg, EINVAL);
+}
+
+static int is_mem_ovf_check(const char fn[], size_t len, size_t item_size) {
+  if (input_err_check(item_size == 0, fn, "zero item_size"))
+    return 1;
+  if (err_check(len > SIZE_MAX / item_size, fn,
+                "len and item_size can overflow", ENOMEM))
+    return 1;
+  return 0;
+}
 
 // String
 
@@ -16,7 +47,7 @@
  * @return String
  */
 String string_new(char *c) {
-  String string = {.first_char = c, .length = strlen(c)};
+  String string = {.first_char = c, .len = strlen(c)};
   return string;
 }
 
@@ -27,11 +58,11 @@ String string_new(char *c) {
  * @param nchar no of characters
  */
 void string_remove_right(String *s, size_t nchar) {
-  if (nchar > s->length) {
-    nchar = s->length;
+  if (nchar > s->len) {
+    nchar = s->len;
   }
 
-  s->length -= nchar;
+  s->len -= nchar;
 }
 
 /**
@@ -41,10 +72,10 @@ void string_remove_right(String *s, size_t nchar) {
  * @param nchar no of characters
  */
 void string_remove_left(String *s, size_t nchar) {
-  if (nchar > s->length) {
-    nchar = s->length;
+  if (nchar > s->len) {
+    nchar = s->len;
   }
-  s->length -= nchar;
+  s->len -= nchar;
   s->first_char += nchar;
 }
 
@@ -54,9 +85,9 @@ void string_remove_left(String *s, size_t nchar) {
  * @param s Text
  */
 int count_space_left(String s) {
-  assert(s.length > 0);
+  assert(s.len > 0);
   int counter = 0;
-  for (size_t i = 0; i <= s.length; ++i) {
+  for (size_t i = 0; i <= s.len; ++i) {
     if (!isspace(s.first_char[i])) {
       break;
     };
@@ -71,9 +102,9 @@ int count_space_left(String s) {
  * @param s Text
  */
 int count_space_right(String s) {
-  assert(s.length > 0);
+  assert(s.len > 0);
   int counter = 0;
-  for (size_t i = s.length; i > 0; --i) {
+  for (size_t i = s.len; i > 0; --i) {
     if (!isspace(s.first_char[i])) {
       break;
     };
@@ -113,9 +144,9 @@ void string_trim(String *s) {
 }
 
 size_t string_find(String s, String delim) {
-  for (size_t i = 0; i < s.length; ++i) {
+  for (size_t i = 0; i < s.len; ++i) {
     if (s.first_char[i] == delim.first_char[0]) {
-      for (size_t j = i; j < delim.length; ++j) {
+      for (size_t j = i; j < delim.len; ++j) {
         if (s.first_char[j] != delim.first_char[j]) {
           break;
         }
@@ -128,95 +159,127 @@ size_t string_find(String s, String delim) {
 
 // Array
 
-Array array_new(size_t length) {
-  Array arr = {
-      .length = length,
-      .size = sizeof(void *) * length,
-      .data = malloc(sizeof(void *) * length),
-  };
-  if (!arr.data)
-    abort();
-  return arr;
+Array *array_new(size_t len, size_t item_size) {
+  const char *fn = __func__;
+  // INFO: Input validation
+  if (item_size != 0 && len > SIZE_MAX / item_size)
+    return NULL;
+  Array *out = malloc(sizeof(*out));
+  if (mem_err_check(out, fn, "array allocation failed"))
+    return NULL;
+  out->len = len;
+  out->item_size = item_size;
+  out->data = calloc(len, item_size);
+  if (mem_err_check(out->data, fn, "data allocation failed")) {
+    array_free(out);
+    return NULL;
+  }
+  return out;
 }
 
-Array array_conversion(void *input, size_t length, size_t elem_size) {
-  Array arr = array_new(length);
-  char *base = (char *)input;
-  for (size_t i = 0; i < length; ++i)
-    arr.data[i] = (void *)(base + i * elem_size);
-  return arr;
+Array *array_conversion(const void *a, size_t len, size_t item_size) {
+  const char *fn = __func__;
+  if (input_err_check(a == NULL, fn, "NULL array passed"))
+    return NULL;
+  Array *out = array_new(len, item_size);
+  if (mem_err_check(out, fn, "array allocation failed"))
+    return NULL;
+  memcpy(out->data, a, len * item_size);
+  return out;
 }
 
 void array_free(Array *arr) {
-  if (!arr)
+  if (input_err_check(arr == NULL, __func__, "NULL array passed"))
     return;
   free(arr->data);
-  arr->length = 0;
-  arr->size = 0;
-  arr->data = NULL;
+  free(arr);
 }
 
-Array array_concat(Array arr1, Array arr2) {
-  size_t len1 = arr1.length;
-  size_t len2 = arr2.length;
-  Array arr_concat = {
-      .length = len1 + len2,
-      .size = (len1 + len2) * sizeof(void *),
-      .data = calloc(len1 + len2, sizeof(void *)),
-  };
-  if (!arr_concat.data)
-    abort();
-  memcpy(arr_concat.data, arr1.data, arr1.size);
-  memcpy(arr_concat.data + len1, arr2.data, arr2.size);
-  return arr_concat;
+Array *array_concat(const Array *a, const Array *b) {
+  const char *fn = __func__;
+  // INFO: Input validation
+  if (err_check(!a || !b, fn, "invalid source arrays", EINVAL))
+    return NULL;
+  if (err_check(a->item_size != b->item_size, fn, "item_size mismatch", EINVAL))
+    return NULL;
+  if (is_mem_ovf_check(fn, a->len, a->item_size))
+    return NULL;
+  if (is_mem_ovf_check(fn, b->len, b->item_size))
+    return NULL;
+  if (is_mem_ovf_check(fn, a->len + b->len, a->item_size))
+    return NULL;
+  size_t a_size = a->len * a->item_size;
+  size_t b_size = b->len * b->item_size;
+  Array *out = array_new(a->len + b->len, a->item_size);
+  if (mem_err_check(out, fn, "array allocation failed"))
+    return NULL;
+  if (a_size > 0)
+    memcpy(out->data, a->data, a_size);
+  if (b_size > 0)
+    memcpy((char *)out->data + a_size, b->data, b_size);
+  return out;
 }
 
-Array *array_split(Array arr, size_t index) {
-  if (arr.length == 0) {
-    Array *ret = malloc(2 * sizeof *ret);
-    if (!ret)
-      abort();
-    ret[0] = array_new(0);
-    ret[1] = array_new(0);
-    return ret;
-  }
-  if (index >= arr.length)
-    index = arr.length - 1;
-  size_t left_count = index + 1;
-  size_t right_count = arr.length - left_count;
-  Array *ret_arr = malloc(2 * sizeof *ret_arr);
-  if (!ret_arr)
-    abort();
-  ret_arr[0] = array_new(left_count);
-  ret_arr[1] = array_new(right_count);
-  if (left_count > 0) {
-    memcpy(ret_arr[0].data, arr.data, left_count * sizeof(void *));
-  }
-  if (right_count > 0) {
-    memcpy((char *)ret_arr[1].data,
-           (char *)arr.data + left_count * sizeof(void *),
-           right_count * sizeof(void *));
-  }
-  return ret_arr;
+Array **array_split(const Array *a, size_t index) {
+    if (!a || a->item_size == 0) return NULL;
+    if (index > a->len) index = a->len;
+    size_t left_count = index;
+    size_t right_count = a->len - left_count;
+    Array **out = malloc(2 * sizeof(*out));
+    if (!out) return NULL;
+    Array *left = array_new(left_count, a->item_size);
+    if (!left) { free(out); return NULL; }
+    Array *right = array_new(right_count, a->item_size);
+    if (!right) { array_free(left); free(out); return NULL; }
+    if (left_count > 0)
+        memcpy(left->data, a->data, left_count * a->item_size);
+    if (right_count > 0)
+        memcpy(right->data, (char *)a->data + left_count * a->item_size,
+               right_count * a->item_size);
+    out[0] = left;
+    out[1] = right;
+    return out;
 }
 
-// WARN: Array push doesn't work
-// void array_push(Array *arr, const void *item, size_t index) {
-//   size_t item_size = arr->size / arr->length;
-//   if (index > arr->length)
-//     index = arr->length;
-//   size_t new_length = arr->length + 1;
-//   size_t new_bytes = new_length * item_size;
-//   void *new_data = realloc(arr->data, new_bytes);
-//   arr->data = new_data;
-//   size_t tail_count = arr->length - index;
-//   if (tail_count > 0) {
-//     void *base = (char *)arr->data;
-//     void *src = base + index * item_size;
-//     void *dst = base + (index + 1) * item_size;
-//     memmove(dst, src, tail_count * item_size);
-//   }
-//   void *target = (char *)arr->data + index * item_size;
-//   memcpy(target, item, item_size);
-//   arr->length = new_length;
-// }
+void array_push(Array *a, const void *item, size_t index) {
+  const char *fn = __func__;
+  if (!a || !item)
+    return;
+  if (a->item_size == 0)
+    return;
+  if (index > a->len)
+    index = a->len;
+  Array **parts = array_split(a, index);
+  if (!parts)
+    return;
+  Array *left = parts[0];
+  Array *right = parts[1];
+  size_t new_left_len = left->len + 1;
+  size_t new_left_bytes = new_left_len * left->item_size;
+  void *tmp = realloc(left->data, new_left_bytes);
+  if (mem_err_check(tmp, fn, "realloc failed")) {
+    free(left->data);
+    free(right->data);
+    free(parts);
+    return;
+  }
+  left->data = tmp;
+  char *dest = (char *)left->data + left->len * left->item_size;
+  memcpy(dest, item, left->item_size);
+  left->len = new_left_len;
+  Array *new_arr = array_concat(left, right);
+  if (!new_arr) {
+    free(left->data);
+    free(right->data);
+    free(parts);
+    return;
+  }
+free(a->data);
+a->data = new_arr->data;
+a->len = new_arr->len;
+a->item_size = new_arr->item_size;
+array_free(left);
+array_free(right);
+free(new_arr);
+free(parts);
+}

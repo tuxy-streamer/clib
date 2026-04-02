@@ -5,13 +5,13 @@
 
 typedef struct {
   char *first_char;
-  size_t length;
+  size_t len;
 } String;
 
 typedef struct {
-  size_t length;
-  size_t size;
-  void **data;
+  size_t len;
+  size_t item_size;
+  void *data;
 } Array;
 
 // String
@@ -33,11 +33,11 @@ void string_split_delim(String s, String delim, int nsplit);
 
 // Array
 
-Array array_new(size_t length);
-Array array_conversion(void *input, size_t length, size_t elem_size);
+Array *array_new(size_t len, size_t item_size);
+Array *array_conversion(const void *input, size_t len, size_t elem_size);
 void array_free(Array *arr);
-Array array_concat(Array arr1, Array arr2);
-Array *array_split(Array arr, size_t index);
+Array *array_concat(const Array *arr1, const Array *arr2);
+Array **array_split(const Array *arr, size_t index);
 void array_push(Array *arr, const void *item, size_t index);
 void array_pop(Array *arr, const void *item, size_t index);
 
