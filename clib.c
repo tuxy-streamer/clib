@@ -11,22 +11,20 @@
 
 // Error checks
 
-static int err_check(bool condition, const char fn_name[], const char *msg,
-                     int err) {
-  if (!condition)
+static int err_check(bool cond, const char fn[], const char *msg, int err) {
+  if (!cond)
     return 0;
-  fprintf(stderr, "%s: errno = %d - %s\n", fn_name, err, msg);
+  fprintf(stderr, "%s: errno = %d - %s\n", fn, err, msg);
   errno = err;
   return 1;
 }
 
-static int mem_err_check(void *mem_ptr, const char fn_name[], const char *msg) {
-  return err_check(mem_ptr == NULL, fn_name, msg, ENOMEM);
+static int mem_err_check(void *mem_ptr, const char fn[], const char *msg) {
+  return err_check(mem_ptr == NULL, fn, msg, ENOMEM);
 }
 
-static int input_err_check(bool condition, const char fn_name[],
-                           const char *msg) {
-  return err_check(condition, fn_name, msg, EINVAL);
+static int input_err_check(bool cond, const char fn[], const char *msg) {
+  return err_check(cond, fn, msg, EINVAL);
 }
 
 static int is_mem_ovf_check(const char fn[], size_t len, size_t item_size) {
