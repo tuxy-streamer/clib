@@ -45,6 +45,9 @@ static int is_mem_ovf_check(const char fn[], size_t len, size_t item_size) {
  * @return String
  */
 String string_new(char *c) {
+  if (!c) {
+    c = "";
+  }
   String string = {.first_char = c, .len = strlen(c)};
   return string;
 }
