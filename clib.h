@@ -39,6 +39,6 @@ void array_free(Array *arr);
 Array *array_concat(const Array *arr1, const Array *arr2);
 Array **array_split(const Array *arr, size_t index);
 void array_push(Array *arr, const void *item, size_t index);
-void array_pop(Array *arr, const void *item, size_t index);
+void array_pop(Array *arr, size_t index);
 
 #endif // CLIB_H
