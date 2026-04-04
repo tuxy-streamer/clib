@@ -19,10 +19,10 @@ static void test_string_new(void) {
 static void test_string_find(void) {
   String input = string_new("Hello, World!");
   String comma = string_new(",");
-  size_t index = string_find(input, comma);
+  size_t index = string_find(&input, &comma);
   assert(index == 5);
   String wor = string_new("Wor");
-  index = string_find(input, wor);
+  index = string_find(&input, &wor);
   assert(index == 7);
   log_success("Passed: test_string_find");
 }
