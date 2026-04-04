@@ -275,12 +275,12 @@ void array_push(Array *a, const void *item, size_t index) {
     free(parts);
     return;
   }
-free(a->data);
-a->data = new_arr->data;
-a->len = new_arr->len;
-a->item_size = new_arr->item_size;
-array_free(left);
-array_free(right);
-free(new_arr);
-free(parts);
+  free(a->data);
+  a->data = new_arr->data;
+  a->len = new_arr->len;
+  a->item_size = new_arr->item_size;
+  array_free(left);
+  array_free(right);
+  free(new_arr);
+  free(parts);
 }
