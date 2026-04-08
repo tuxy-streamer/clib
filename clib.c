@@ -28,10 +28,9 @@ static int input_err_check(bool cond, const char fn[], const char *msg) {
 }
 
 static int is_mem_ovf_check(const char fn[], size_t len, size_t item_size) {
-  if (input_err_check(item_size == 0, fn, "zero item_size"))
+  if (input_err_check(item_size == 0, fn, "Zero item_size"))
     return 1;
-  if (err_check(len > SIZE_MAX / item_size, fn,
-                "len and item_size can overflow", ENOMEM))
+  if (err_check(len > SIZE_MAX / item_size, fn, "Can overflow", ENOMEM))
     return 1;
   return 0;
 }
@@ -69,7 +68,7 @@ String string_new(char *c) {
  */
 void string_remove_right(String *s, size_t nchar) {
   const char *fn = __func__;
-  if (input_err_check(!s, fn, "Invalid input string"))
+  if (input_err_check(!s, fn, "NULL input string"))
     return;
   if (input_err_check(nchar == 0, fn, "Zero number of chars"))
     return;
@@ -176,6 +175,8 @@ void string_trim(String *s) {
 
 size_t string_find(String *s, String *delim) {
   if (input_err_check(!s, __func__, "NULL input string"))
+    return NULL;
+  if (input_err_check(!delim, __func__, "NULL input string"))
     return NULL;
   for (size_t i = 0; i < s->len; ++i) {
     if (s->first_char[i] == delim->first_char[0]) {
