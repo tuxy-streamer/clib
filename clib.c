@@ -158,7 +158,7 @@ void string_trim_right(String *s) {
 void string_trim_left(String *s) {
   if (input_err_check(!s, __func__, "NULL input string"))
     return;
-  int space_count = count_space_left(*s);
+  int space_count = count_space_left(s);
   string_remove_left(s, space_count);
 }
 
